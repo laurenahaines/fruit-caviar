@@ -13,24 +13,29 @@
 		<!-- Babel: compiles JSX in the browser, no build step needed -->
 		<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-		<!-- Importmap: tells the browser where to find each npm package -->
+		<!--
+			Importmap: all three-dependent packages must share the EXACT same
+			three instance — we pin every package to the same esm.sh build to
+			prevent the "Multiple instances of Three.js" warning and the
+			resulting blank canvas.
+		-->
 		<script type="importmap">
 		{
 			"imports": {
-				"three":                  "https://esm.sh/three@0.176.0",
-				"three/addons/":          "https://esm.sh/three@0.176.0/examples/jsm/",
-				"react":                  "https://esm.sh/react@18",
-				"react-dom/client":       "https://esm.sh/react-dom@18/client",
-				"react/jsx-runtime":      "https://esm.sh/react@18/jsx-runtime",
-				"@react-three/fiber":     "https://esm.sh/@react-three/fiber@8",
-				"@react-three/drei":      "https://esm.sh/@react-three/drei@9",
-				"@react-three/rapier":    "https://esm.sh/@react-three/rapier@1"
+				"three":               "https://esm.sh/three@0.169.0",
+				"three/addons/":       "https://esm.sh/three@0.169.0/examples/jsm/",
+				"react":               "https://esm.sh/react@18.3.1",
+				"react/jsx-runtime":   "https://esm.sh/react@18.3.1/jsx-runtime",
+				"react-dom":           "https://esm.sh/react-dom@18.3.1",
+				"react-dom/client":    "https://esm.sh/react-dom@18.3.1/client",
+				"@react-three/fiber":  "https://esm.sh/@react-three/fiber@8.17.10?deps=three@0.169.0,react@18.3.1",
+				"@react-three/drei":   "https://esm.sh/@react-three/drei@9.117.3?deps=three@0.169.0,react@18.3.1",
+				"@react-three/rapier": "https://esm.sh/@react-three/rapier@1.5.0?deps=three@0.169.0,react@18.3.1"
 			}
 		}
 		</script>
 
 		<style>
-			/* Canvas sits behind everything else */
 			#metaball-root {
 				position: fixed;
 				top: 0; left: 0;
@@ -46,28 +51,20 @@
 	</head>
 	<body class="is-preload">
 
-		<!-- Metaball canvas mounts here, behind everything else -->
 		<div id="metaball-root"></div>
 
 		<div id="wrapper">
 			<div id="overlay"></div>
 			<div id="main">
-				<!-- Header -->
-					<header id="header">
-						<h1>Fruit Caviar</h1>
-						<nav>
-							<ul>
-								<li><a href="#" class="fas fa-map-marker-alt"><span class="label">Locations</span></a></li>
-								<li><a href="#" class="fas fa-envelope"><span class="label">Contact Us</span></a></li>
-							</ul>
-						</nav>
-					</header>
-				<!-- Footer -->
-				<!--
-					<footer id="footer">
-						<span class="copyright">&copy; Untitled. Design: <a href="http://html5up.net">HTML5 UP</a>.</span>
-					</footer>
-				-->
+				<header id="header">
+					<h1>Fruit Caviar</h1>
+					<nav>
+						<ul>
+							<li><a href="#" class="fas fa-map-marker-alt"><span class="label">Locations</span></a></li>
+							<li><a href="#" class="fas fa-envelope"><span class="label">Contact Us</span></a></li>
+						</ul>
+					</nav>
+				</header>
 			</div>
 		</div>
 
@@ -77,11 +74,10 @@
 			window.onorientationchange = function() { document.body.scrollTop = 0; }
 		</script>
 
-		<!-- Metaball background — JSX compiled at runtime by Babel -->
 		<script type="text/babel" data-type="module">
-			import * as THREE from 'three'
-			import { useRef } from 'react'
+			import React, { useRef } from 'react'
 			import { createRoot } from 'react-dom/client'
+			import * as THREE from 'three'
 			import { Canvas, useFrame } from '@react-three/fiber'
 			import { MarchingCubes, MarchingCube, Environment, Bounds } from '@react-three/drei'
 			import { Physics, RigidBody, BallCollider } from '@react-three/rapier'
@@ -128,12 +124,12 @@
 						<Physics gravity={[0, 2, 0]}>
 							<MarchingCubes resolution={80} maxPolyCount={10000} enableUvs={false} enableColors>
 								<meshStandardMaterial vertexColors thickness={0.15} roughness={0} />
-								<MetaBall color="indianred"   position={[1,  1,  0.5]} />
-								<MetaBall color="skyblue"     position={[-1, -1, -0.5]} />
-								<MetaBall color="teal"        position={[2,  2,  0.5]} />
-								<MetaBall color="orange"      position={[-2, -2, -0.5]} />
-								<MetaBall color="hotpink"     position={[3,  3,  0.5]} />
-								<MetaBall color="aquamarine"  position={[-3, -3, -0.5]} />
+								<MetaBall color="indianred"  position={[1,  1,  0.5]} />
+								<MetaBall color="skyblue"    position={[-1, -1, -0.5]} />
+								<MetaBall color="teal"       position={[2,  2,  0.5]} />
+								<MetaBall color="orange"     position={[-2, -2, -0.5]} />
+								<MetaBall color="hotpink"    position={[3,  3,  0.5]} />
+								<MetaBall color="aquamarine" position={[-3, -3, -0.5]} />
 								<Pointer />
 							</MarchingCubes>
 						</Physics>
