@@ -9,13 +9,49 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
 		<link rel="stylesheet" href="assets/css/main.css" />
 		<noscript><link rel="stylesheet" href="assets/css/noscript.css" /></noscript>
+
+		<!-- Babel: compiles JSX in the browser, no build step needed -->
+		<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+		<!-- Importmap: tells the browser where to find each npm package -->
+		<script type="importmap">
+		{
+			"imports": {
+				"three":                  "https://esm.sh/three@0.176.0",
+				"three/addons/":          "https://esm.sh/three@0.176.0/examples/jsm/",
+				"react":                  "https://esm.sh/react@18",
+				"react-dom/client":       "https://esm.sh/react-dom@18/client",
+				"react/jsx-runtime":      "https://esm.sh/react@18/jsx-runtime",
+				"@react-three/fiber":     "https://esm.sh/@react-three/fiber@8",
+				"@react-three/drei":      "https://esm.sh/@react-three/drei@9",
+				"@react-three/rapier":    "https://esm.sh/@react-three/rapier@1"
+			}
+		}
+		</script>
+
+		<style>
+			/* Canvas sits behind everything else */
+			#metaball-root {
+				position: fixed;
+				top: 0; left: 0;
+				width: 100%; height: 100%;
+				z-index: 0;
+			}
+			#metaball-root canvas {
+				display: block;
+				width: 100% !important;
+				height: 100% !important;
+			}
+		</style>
 	</head>
 	<body class="is-preload">
+
+		<!-- Metaball canvas mounts here, behind everything else -->
+		<div id="metaball-root"></div>
+
 		<div id="wrapper">
-			<div id="bg"></div>
 			<div id="overlay"></div>
 			<div id="main">
-
 				<!-- Header -->
 					<header id="header">
 						<h1>Fruit Caviar</h1>
@@ -26,20 +62,93 @@
 							</ul>
 						</nav>
 					</header>
-
 				<!-- Footer -->
 				<!--
 					<footer id="footer">
 						<span class="copyright">&copy; Untitled. Design: <a href="http://html5up.net">HTML5 UP</a>.</span>
 					</footer>
 				-->
-
 			</div>
 		</div>
+
 		<script>
 			window.onload = function() { document.body.classList.remove('is-preload'); }
 			window.ontouchmove = function() { return false; }
 			window.onorientationchange = function() { document.body.scrollTop = 0; }
 		</script>
+
+		<!-- Metaball background — JSX compiled at runtime by Babel -->
+		<script type="text/babel" data-type="module">
+			import * as THREE from 'three'
+			import { useRef } from 'react'
+			import { createRoot } from 'react-dom/client'
+			import { Canvas, useFrame } from '@react-three/fiber'
+			import { MarchingCubes, MarchingCube, Environment, Bounds } from '@react-three/drei'
+			import { Physics, RigidBody, BallCollider } from '@react-three/rapier'
+
+			function MetaBall({ color, vec = new THREE.Vector3(), ...props }) {
+				const api = useRef()
+				useFrame((state, delta) => {
+					delta = Math.min(delta, 0.1)
+					api.current.applyImpulse(
+						vec
+							.copy(api.current.translation())
+							.normalize()
+							.multiplyScalar(delta * -0.05),
+					)
+				})
+				return (
+					<RigidBody ref={api} colliders={false} linearDamping={4} angularDamping={0.95} {...props}>
+						<MarchingCube strength={0.35} subtract={6} color={color} />
+						<BallCollider args={[0.1]} type="dynamic" />
+					</RigidBody>
+				)
+			}
+
+			function Pointer({ vec = new THREE.Vector3() }) {
+				const ref = useRef()
+				useFrame(({ pointer, viewport }) => {
+					const { width, height } = viewport.getCurrentViewport()
+					vec.set(pointer.x * (width / 2), pointer.y * (height / 2), 0)
+					ref.current.setNextKinematicTranslation(vec)
+				})
+				return (
+					<RigidBody type="kinematicPosition" colliders={false} ref={ref}>
+						<MarchingCube strength={0.5} subtract={10} color="orange" />
+						<BallCollider args={[0.1]} type="dynamic" />
+					</RigidBody>
+				)
+			}
+
+			function App() {
+				return (
+					<Canvas dpr={[1, 1.5]} camera={{ position: [0, 0, 5], fov: 25 }}>
+						<color attach="background" args={['#f0f0f0']} />
+						<ambientLight intensity={1} />
+						<Physics gravity={[0, 2, 0]}>
+							<MarchingCubes resolution={80} maxPolyCount={10000} enableUvs={false} enableColors>
+								<meshStandardMaterial vertexColors thickness={0.15} roughness={0} />
+								<MetaBall color="indianred"   position={[1,  1,  0.5]} />
+								<MetaBall color="skyblue"     position={[-1, -1, -0.5]} />
+								<MetaBall color="teal"        position={[2,  2,  0.5]} />
+								<MetaBall color="orange"      position={[-2, -2, -0.5]} />
+								<MetaBall color="hotpink"     position={[3,  3,  0.5]} />
+								<MetaBall color="aquamarine"  position={[-3, -3, -0.5]} />
+								<Pointer />
+							</MarchingCubes>
+						</Physics>
+						<Environment files="https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/1k/industrial_workshop_foundry_1k.hdr" />
+						<Bounds fit clip observe margin={1}>
+							<mesh visible={false}>
+								<boxGeometry />
+							</mesh>
+						</Bounds>
+					</Canvas>
+				)
+			}
+
+			createRoot(document.getElementById('metaball-root')).render(<App />)
+		</script>
+
 	</body>
 </html>
